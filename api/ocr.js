@@ -18,8 +18,8 @@ Return ONLY a JSON object, no markdown:
 
 export default async function handler(req, res) {
   if (!checkKey(req, res)) return;
-  const key = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const key = (process.env.GEMINI_API_KEY || "").trim();
+  const model = (process.env.GEMINI_MODEL || "gemini-2.5-flash").trim();
 
   if (req.method === "GET") {
     return res.status(200).json({ configured: !!key, model: key ? model : null });
