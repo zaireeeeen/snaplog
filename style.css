@@ -14,6 +14,9 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* the [hidden] attribute must always win over display rules below */
+[hidden] { display: none !important; }
+
 body {
   background:
     radial-gradient(1100px 500px at 15% -10%, rgba(124, 156, 255, 0.14), transparent 60%),
@@ -192,7 +195,6 @@ footer { margin-top: 50px; text-align: center; color: var(--muted); font-size: 0
 }
 
 /* ---------- passcode gate ---------- */
-.gate[hidden] { display: none; }
 .gate {
   position: fixed; inset: 0; z-index: 50;
   background: rgba(11, 14, 20, 0.92);
