@@ -109,6 +109,16 @@ function renderEntry(entry, { prepend = false } = {}) {
   tpl.querySelector(".conf").textContent =
     entry.confidence != null ? `confidence ${Math.round(entry.confidence)}%` : "";
 
+  // lead line: structured fields from the smart engine
+  const lead = tpl.querySelector(".lead");
+  const bits = [];
+  if (entry.role) bits.push(entry.role);
+  if (entry.company) bits.push(entry.company);
+  if (entry.email) bits.push(`✉ ${entry.email}`);
+  if (entry.phone) bits.push(`☎ ${entry.phone}`);
+  if (bits.length) lead.textContent = bits.join("  ·  ");
+  else lead.hidden = true;
+
   const ta = tpl.querySelector(".text");
   ta.value = entry.text;
 
@@ -196,6 +206,44 @@ let processing = false;
 let batchTotal = 0;
 let batchDone = 0;
 
+// smart engine (server-side Gemini): used automatically when the server has a key
+let smartEngine = null; // null = unknown yet
+let lastSmartCall = 0;
+const SMART_GAP_MS = 4500; // stay under the free tier's requests-per-minute cap
+
+async function smartConfigured() {
+  if (smartEngine == null) {
+    try {
+      const r = await api("/api/ocr");
+      smartEngine = !!r.configured;
+    } catch {
+      smartEngine = false;
+    }
+  }
+  return smartEngine;
+}
+
+async function smartRead(blob, type) {
+  for (let attempt = 1; ; attempt++) {
+    const wait = lastSmartCall + SMART_GAP_MS - Date.now();
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    lastSmartCall = Date.now();
+    const res = await fetch(`/api/ocr?type=${encodeURIComponent(type)}`, {
+      method: "POST",
+      headers: { "x-snaplog-key": apiKey, "Content-Type": "application/octet-stream" },
+      body: blob,
+    });
+    if (res.status === 429 && attempt <= 3) {
+      setStatus(`Rate limit hit — pausing 30s (attempt ${attempt}/3)…`);
+      await new Promise((r) => setTimeout(r, 30000));
+      continue;
+    }
+    if (res.status === 401) { showGate(true); throw new Error("unauthorized"); }
+    if (!res.ok) throw new Error(`smart OCR failed (${res.status})`);
+    return res.json();
+  }
+}
+
 async function getWorker() {
   if (worker) return worker;
   if (!workerLoading) {
@@ -241,18 +289,32 @@ async function processQueue() {
   processing = true;
   let failed = 0;
   try {
-    const w = await getWorker();
+    const smart = await smartConfigured();
+    const w = smart ? null : await getWorker();
+    const engine = smart ? "smart read" : "on-device";
     while (queue.length) {
       const file = queue.shift();
       const label = file.name || "pasted image";
-      setStatus(`Reading ${batchDone + 1} of ${batchTotal} — ${label}`, (batchDone / batchTotal) * 100);
+      setStatus(`Reading ${batchDone + 1} of ${batchTotal} (${engine}) — ${label}`, (batchDone / batchTotal) * 100);
       try {
         const ts = Date.now();
-        const { data } = await w.recognize(file);
-
-        setStatus(`Saving ${batchDone + 1} of ${batchTotal} — ${label}`);
         const up = await uploadableImage(file);
         const filename = up.name || `screenshot-${stampForFile(ts)}.jpg`;
+
+        let extracted = {};
+        let text = "";
+        let confidence = null;
+        if (smart) {
+          const r = await smartRead(up.blob, up.type);
+          text = (r.text || "").trim();
+          extracted = r;
+        } else {
+          const { data } = await w.recognize(file);
+          text = (data.text || "").trim();
+          confidence = data.confidence;
+        }
+
+        setStatus(`Saving ${batchDone + 1} of ${batchTotal} — ${label}`);
         const img = await api(
           `/api/upload-image?name=${encodeURIComponent(filename)}&type=${encodeURIComponent(up.type)}`,
           { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: up.blob }
@@ -262,9 +324,19 @@ async function processQueue() {
           id: `${ts}-${Math.random().toString(36).slice(2, 7)}`,
           ts,
           filename,
-          text: (data.text || "").trim(),
-          confidence: data.confidence,
+          text,
+          confidence,
           imageUrl: img.url,
+          is_job_post: extracted.is_job_post,
+          platform: extracted.platform,
+          role: extracted.role,
+          company: extracted.company,
+          location: extracted.location,
+          salary: extracted.salary,
+          email: extracted.email,
+          phone: extracted.phone,
+          link: extracted.link,
+          apply: extracted.apply,
         };
         await api("/api/save-entry", {
           method: "POST",
@@ -300,7 +372,8 @@ async function processQueue() {
 // ---------- exports ----------
 function buildSheet(entries) {
   const rows = [[
-    "#", "Timestamp", "File name", "Stored image", "Words", "Characters", "Confidence (%)", "Extracted text",
+    "#", "Timestamp", "File name", "Role", "Company", "Location", "Salary",
+    "Email", "Phone", "Link", "Apply", "Stored image", "Words", "Extracted text",
   ]];
   const chrono = [...entries].sort((a, b) => a.ts - b.ts); // chronological log
   chrono.forEach((e, i) => {
@@ -308,17 +381,23 @@ function buildSheet(entries) {
       i + 1,
       fmtStamp(e.ts),
       e.filename,
+      e.role || "",
+      e.company || "",
+      e.location || "",
+      e.salary || "",
+      e.email || "",
+      e.phone || "",
+      e.link || "",
+      e.apply || "",
       `images/${imageFileName(e)}`,
       wordCount(e.text),
-      e.text.length,
-      e.confidence != null ? Math.round(e.confidence) : "",
       e.text,
     ]);
   });
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws["!cols"] = [
-    { wch: 4 }, { wch: 20 }, { wch: 28 }, { wch: 38 },
-    { wch: 7 }, { wch: 11 }, { wch: 14 }, { wch: 90 },
+    { wch: 4 }, { wch: 20 }, { wch: 24 }, { wch: 28 }, { wch: 24 }, { wch: 16 }, { wch: 16 },
+    { wch: 30 }, { wch: 16 }, { wch: 28 }, { wch: 24 }, { wch: 38 }, { wch: 7 }, { wch: 90 },
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "SnapLog");

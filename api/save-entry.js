@@ -17,6 +17,12 @@ export default async function handler(req, res) {
       confidence: e.confidence == null ? null : Number(e.confidence),
       imageUrl: String(e.imageUrl || ""),
     };
+    // optional structured fields from the smart (Gemini) engine
+    for (const k of ["is_job_post", "platform", "role", "company", "location", "salary", "email", "phone", "link", "apply"]) {
+      if (e[k] != null && e[k] !== "") {
+        entry[k] = k === "is_job_post" ? Boolean(e[k]) : String(e[k]).slice(0, 500);
+      }
+    }
     await put(`entries/${entry.id}.json`, JSON.stringify(entry), {
       access: "public",
       contentType: "application/json",
