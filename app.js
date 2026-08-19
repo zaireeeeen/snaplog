@@ -103,7 +103,11 @@ function renderEntry(entry, { prepend = false } = {}) {
   const root = tpl.querySelector(".entry");
   root.dataset.id = entry.id;
 
-  tpl.querySelector(".thumb").src = entry.imageUrl;
+  if (entry.imageUrl) {
+    tpl.querySelector(".thumb").src = entry.imageUrl;
+  } else {
+    root.classList.add("no-thumb"); // image no longer stored (e.g. restored entry)
+  }
   tpl.querySelector(".stamp").textContent = fmtStamp(entry.ts);
   tpl.querySelector(".fname").textContent = entry.filename;
   tpl.querySelector(".conf").textContent =
@@ -493,8 +497,11 @@ $("#exportZip").addEventListener("click", () => exportZip().catch(console.error)
 
 // two-step clear-all, same non-blocking pattern as per-entry delete
 const clearBtn = $("#clearAll");
+let clearArmedAt = 0;
 clearBtn.addEventListener("click", async () => {
   if (clearBtn.dataset.armed) {
+    // a hasty double-click must not nuke the log — require a deliberate second click
+    if (Date.now() - clearArmedAt < 1200) return;
     clearBtn.disabled = true;
     try {
       await api("/api/clear-all", { method: "POST" });
@@ -508,8 +515,10 @@ clearBtn.addEventListener("click", async () => {
     delete clearBtn.dataset.armed;
   } else {
     clearBtn.dataset.armed = "1";
-    clearBtn.textContent = "Deletes everything — click again";
-    setTimeout(() => { delete clearBtn.dataset.armed; clearBtn.textContent = "🗑 Clear all"; }, 3500);
+    clearArmedAt = Date.now();
+    const n = entriesEl.children.length;
+    clearBtn.textContent = `Delete ALL ${n} entries + images forever? Click again`;
+    setTimeout(() => { delete clearBtn.dataset.armed; clearBtn.textContent = "🗑 Clear all"; }, 5000);
   }
 });
 

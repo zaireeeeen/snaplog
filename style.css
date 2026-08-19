@@ -237,3 +237,7 @@ footer { margin-top: 50px; text-align: center; color: var(--muted); font-size: 0
   line-height: 1.5;
   word-break: break-word;
 }
+
+/* entries whose stored image is gone (restored from a data export) */
+.entry.no-thumb { grid-template-columns: 1fr; }
+.entry.no-thumb .thumb-wrap { display: none; }
