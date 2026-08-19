@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>SnapLog — OCR Reader &amp; Logger</title>
+<meta name="description" content="Drop, paste, or snap any image. SnapLog reads the text, logs every scan with a timestamp, stores the image in your private cloud, and exports it all to Excel — synced across your phone and laptop." />
+<meta name="theme-color" content="#0b0e14" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="gate" class="gate" hidden>
+  <form id="gateForm" class="gate-card">
+    <div class="logo big">📸</div>
+    <h1>SnapLog</h1>
+    <p class="gate-sub">Enter your passcode to open your log.<br />You only do this once per device.</p>
+    <input id="gateKey" type="password" placeholder="Passcode" autocomplete="current-password" />
+    <button class="btn primary" type="submit">Unlock</button>
+    <p id="gateErr" class="gate-err" hidden>Wrong passcode — try again.</p>
+  </form>
+</div>
+
+<header class="top">
+  <div class="brand">
+    <span class="logo">📸</span>
+    <div>
+      <h1>SnapLog</h1>
+      <p class="tag">OCR reader &amp; logger — scan on your phone, work on your laptop.</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button id="refresh" class="btn" title="Reload the log (pick up scans from other devices)">↻ Refresh</button>
+    <button id="exportXlsx" class="btn primary" title="Download the full log as an Excel sheet">⬇ Excel log</button>
+    <button id="exportZip" class="btn" title="Download a ZIP with the Excel log + every stored image">🗂 Log + images (ZIP)</button>
+    <button id="clearAll" class="btn danger" title="Delete every log entry and stored image">🗑 Clear all</button>
+  </div>
+</header>
+
+<main>
+  <section id="dropzone" class="dropzone" tabindex="0" aria-label="Upload images for OCR">
+    <input type="file" id="fileInput" accept="image/*" multiple hidden />
+    <div class="dz-inner">
+      <div class="dz-icon">⇪</div>
+      <p class="dz-title">Drop images here, <button id="browseBtn" class="linklike" type="button">browse or snap a photo</button>, or press <kbd>⌘V</kbd> to paste a screenshot</p>
+      <p class="dz-sub">PNG · JPG · WEBP · GIF · BMP — batches of 25–50 welcome. Scans sync to all your devices.</p>
+    </div>
+  </section>
+
+  <section id="status" class="status" hidden>
+    <div class="spinner"></div>
+    <span id="statusText">Warming up the OCR engine…</span>
+    <div class="bar"><div id="statusBar" class="bar-fill"></div></div>
+  </section>
+
+  <section class="log-head">
+    <h2>Scan log</h2>
+    <span id="count" class="count">0 entries</span>
+  </section>
+
+  <section id="entries" class="entries"></section>
+
+  <p id="empty" class="empty">Nothing scanned yet. Snap or paste an image to start the log.</p>
+</main>
+
+<footer>
+  <p>OCR runs on your device; scans are stored in your private cloud store and synced to every device with the passcode.</p>
+</footer>
+
+<template id="entryTpl">
+  <article class="entry">
+    <div class="thumb-wrap"><img class="thumb" alt="scanned image" loading="lazy" /></div>
+    <div class="entry-body">
+      <div class="entry-meta">
+        <span class="stamp"></span>
+        <span class="fname"></span>
+        <span class="conf"></span>
+      </div>
+      <textarea class="text" spellcheck="false" placeholder="(no text detected)"></textarea>
+      <div class="entry-actions">
+        <button class="btn sm copy">Copy text</button>
+        <button class="btn sm dl">Download image</button>
+        <button class="btn sm danger del">Delete</button>
+      </div>
+    </div>
+  </article>
+</template>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
