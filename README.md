@@ -22,6 +22,11 @@ I built it in a day because my camera roll was where important details went to d
 - **Event and wedding planners.** Vendor quotes arrive as screenshots. Each gets filed with a timestamp, the numbers and phone numbers pulled out. Comparing twelve florists no longer means three apps.
 - **Students and researchers.** Lecture slides and library shots become searchable text with dates attached. "I know I saved that somewhere" becomes a citation.
 - **Small traders.** Supplier price lists and invoices move through WhatsApp as images. They land in a running log with amounts and contacts extracted. Month-end starts from a sheet, not a camera roll.
+- **Anyone with a cluttered brain dump.** A camera roll full of screenshots you swore you'd come back to. Now they come back to you.
+
+Coming soon: the same declutter for your notes and text dumps.
+
+Full story and case study: [ankitabiswas.com/project/snaplog](https://www.ankitabiswas.com/project/snaplog/)
 
 ## Deploy your own
 
