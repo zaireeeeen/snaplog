@@ -15,6 +15,14 @@ I built it in a day because my camera roll was where important details went to d
 - A passcode you choose keeps the log yours.
 - No Gemini key? It falls back to on-device OCR (Tesseract). Rougher output, still free, nothing breaks.
 
+## Who it's for
+
+- **Job seekers.** A week of we're-hiring screenshots becomes one sheet of roles, salaries, and recruiter emails you can actually work through. Nothing expires unread.
+- **Real estate agents.** Listings from portals and WhatsApp groups land in one sheet with prices, locations, and numbers. A Saturday of browsing becomes a Monday call list.
+- **Event and wedding planners.** Vendor quotes arrive as screenshots. Each gets filed with a timestamp, the numbers and phone numbers pulled out. Comparing twelve florists no longer means three apps.
+- **Students and researchers.** Lecture slides and library shots become searchable text with dates attached. "I know I saved that somewhere" becomes a citation.
+- **Small traders.** Supplier price lists and invoices move through WhatsApp as images. They land in a running log with amounts and contacts extracted. Month-end starts from a sheet, not a camera roll.
+
 ## Deploy your own
 
 Your copy runs on your own free accounts. Your screenshots never touch anyone else's server, including mine.
